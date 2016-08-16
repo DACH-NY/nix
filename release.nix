@@ -78,15 +78,14 @@ let
     build = pkgs.lib.genAttrs systems (system:
 
       # FIXME: temporarily use a different branch for the Darwin build.
-      with import (if system == "x86_64-darwin" then <nixpkgs-darwin> else <nixpkgs>) { inherit system; };
+      with import (if system == "x86_64-darwin" then <nixpkgs> else <nixpkgs>) { inherit system; };
 
       releaseTools.nixBuild {
         name = "nix";
         src = tarball;
 
         buildInputs =
-          [ curl perl bzip2 xz openssl pkgconfig sqlite boehmgc ]
-          ++ lib.optional stdenv.isLinux libsodium;
+          [ curl perl bzip2 xz openssl pkgconfig sqlite boehmgc libsodium ];
 
         configureFlags = ''
           --disable-init-state
