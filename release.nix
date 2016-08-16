@@ -1,6 +1,7 @@
 { nix ? { outPath = ./.; revCount = 1234; shortRev = "abcdef"; }
 , nixpkgs ? { outPath = <nixpkgs>; revCount = 1234; shortRev = "abcdef"; }
 , officialRelease ? false
+, doTests ? false
 }:
 
 let
@@ -76,9 +77,7 @@ let
 
 
     build = pkgs.lib.genAttrs systems (system:
-
-      # FIXME: temporarily use a different branch for the Darwin build.
-      with import (if system == "x86_64-darwin" then <nixpkgs> else <nixpkgs>) { inherit system; };
+      with import <nixpkgs> { inherit system; };
 
       releaseTools.nixBuild {
         name = "nix";
@@ -112,7 +111,7 @@ let
     binaryTarball = pkgs.lib.genAttrs systems (system:
 
       # FIXME: temporarily use a different branch for the Darwin build.
-      with import (if system == "x86_64-darwin" then <nixpkgs-darwin> else <nixpkgs>) { inherit system; };
+      with import <nixpkgs> { inherit system; };
 
       let
         toplevel = builtins.getAttr system jobs.build;
@@ -209,57 +208,59 @@ let
 
 
     # System tests.
-    tests.remoteBuilds = (import ./tests/remote-builds.nix rec {
-      nix = build.x86_64-linux; system = "x86_64-linux";
-    });
+    tests = if !doTests then {} else {
+      remoteBuilds = (import ./tests/remote-builds.nix rec {
+        nix = build.x86_64-linux; system = "x86_64-linux";
+      });
 
-    tests.nix-copy-closure = (import ./tests/nix-copy-closure.nix rec {
-      nix = build.x86_64-linux; system = "x86_64-linux";
-    });
+      nix-copy-closure = (import ./tests/nix-copy-closure.nix rec {
+        nix = build.x86_64-linux; system = "x86_64-linux";
+      });
 
-    tests.binaryTarball =
-      with import <nixpkgs> { system = "x86_64-linux"; };
-      vmTools.runInLinuxImage (runCommand "nix-binary-tarball-test"
-        { diskImage = vmTools.diskImages.ubuntu1204x86_64;
-        }
-        ''
-          useradd -m alice
-          su - alice -c 'tar xf ${binaryTarball.x86_64-linux}/*.tar.*'
-          mount -t tmpfs none /nix # Provide a writable /nix.
-          chown alice /nix
-          su - alice -c '_NIX_INSTALLER_TEST=1 ./nix-*/install'
-          su - alice -c 'nix-store --verify'
-          su - alice -c 'nix-store -qR ${build.x86_64-linux}'
-          mkdir -p $out/nix-support
-          touch $out/nix-support/hydra-build-products
-        ''); # */
-
-    tests.evalNixpkgs =
-      import <nixpkgs/pkgs/top-level/make-tarball.nix> {
-        inherit nixpkgs;
-        inherit pkgs;
-        nix = build.x86_64-linux;
-        officialRelease = false;
-      };
-
-    tests.evalNixOS =
-      pkgs.runCommand "eval-nixos" { buildInputs = [ build.x86_64-linux ]; }
-        ''
-          export NIX_DB_DIR=$TMPDIR
-          export NIX_STATE_DIR=$TMPDIR
-          nix-store --init
-
-          nix-instantiate ${nixpkgs}/nixos/release-combined.nix -A tested --dry-run
-
-          touch $out
-        '';
-
+      binaryTarball =
+        with import <nixpkgs> { system = "x86_64-linux"; };
+        vmTools.runInLinuxImage (runCommand "nix-binary-tarball-test"
+          { diskImage = vmTools.diskImages.ubuntu1204x86_64;
+          }
+          ''
+            useradd -m alice
+            su - alice -c 'tar xf ${binaryTarball.x86_64-linux}/*.tar.*'
+            mount -t tmpfs none /nix # Provide a writable /nix.
+            chown alice /nix
+            su - alice -c '_NIX_INSTALLER_TEST=1 ./nix-*/install'
+            su - alice -c 'nix-store --verify'
+            su - alice -c 'nix-store -qR ${build.x86_64-linux}'
+            mkdir -p $out/nix-support
+            touch $out/nix-support/hydra-build-products
+          ''); # */
+  
+      evalNixpkgs =
+        import <nixpkgs/pkgs/top-level/make-tarball.nix> {
+          inherit nixpkgs;
+          inherit pkgs;
+          nix = build.x86_64-linux;
+          officialRelease = false;
+        };
+  
+      evalNixOS =
+        pkgs.runCommand "eval-nixos" { buildInputs = [ build.x86_64-linux ]; }
+          ''
+            export NIX_DB_DIR=$TMPDIR
+            export NIX_STATE_DIR=$TMPDIR
+            nix-store --init
+  
+            nix-instantiate ${nixpkgs}/nixos/release-combined.nix -A tested --dry-run
+  
+            touch $out
+          '';
+    };
+  
 
     # Aggregate job containing the release-critical jobs.
     release = pkgs.releaseTools.aggregate {
       name = "nix-${tarball.version}";
       meta.description = "Release-critical builds";
-      constituents =
+      constituents = pkgs.lib.concat
         [ tarball
           #build.i686-freebsd
           build.i686-linux
@@ -281,12 +282,13 @@ let
           rpm_fedora20x86_64
           rpm_fedora21i386
           rpm_fedora21x86_64
+        ] (if doTests then [
           tests.remoteBuilds
           tests.nix-copy-closure
           tests.binaryTarball
           tests.evalNixpkgs
           tests.evalNixOS
-        ];
+        ] else []);
     };
 
   };
