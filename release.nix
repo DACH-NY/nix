@@ -8,7 +8,7 @@ let
 
   pkgs = import <nixpkgs> {};
 
-  systems = [ "x86_64-linux" "i686-linux" "x86_64-darwin" /* "x86_64-freebsd" "i686-freebsd" */ ];
+  systems = [ "x86_64-linux" "x86_64-darwin" /* "x86_64-freebsd" "i686-freebsd" */ ];
 
 
   jobs = rec {
@@ -178,32 +178,6 @@ let
         FONTCONFIG_FILE = texFunctions.fontsConf;
       };
 
-
-    rpm_fedora19i386 = makeRPM_i686 (diskImageFuns: diskImageFuns.fedora19i386) [];
-    rpm_fedora19x86_64 = makeRPM_x86_64 (diskImageFunsFun: diskImageFunsFun.fedora19x86_64) [];
-    rpm_fedora20i386 = makeRPM_i686 (diskImageFuns: diskImageFuns.fedora20i386) [];
-    rpm_fedora20x86_64 = makeRPM_x86_64 (diskImageFunsFun: diskImageFunsFun.fedora20x86_64) [];
-    rpm_fedora21i386 = makeRPM_i686 (diskImageFuns: diskImageFuns.fedora21i386) [ "libsodium-devel" ];
-    rpm_fedora21x86_64 = makeRPM_x86_64 (diskImageFunsFun: diskImageFunsFun.fedora21x86_64) [ "libsodium-devel" ];
-
-
-    deb_debian8i386 = makeDeb_i686 (diskImageFuns: diskImageFuns.debian8i386) [ "libsodium-dev" ] [ "libsodium13" ];
-    deb_debian8x86_64 = makeDeb_x86_64 (diskImageFunsFun: diskImageFunsFun.debian8x86_64) [ "libsodium-dev" ] [ "libsodium13" ];
-
-    deb_ubuntu1310i386 = makeDeb_i686 (diskImageFuns: diskImageFuns.ubuntu1310i386) [] [];
-    deb_ubuntu1310x86_64 = makeDeb_x86_64 (diskImageFuns: diskImageFuns.ubuntu1310x86_64) [] [];
-    deb_ubuntu1404i386 = makeDeb_i686 (diskImageFuns: diskImageFuns.ubuntu1404i386) [] [];
-    deb_ubuntu1404x86_64 = makeDeb_x86_64 (diskImageFuns: diskImageFuns.ubuntu1404x86_64) [] [];
-    deb_ubuntu1410i386 = makeDeb_i686 (diskImageFuns: diskImageFuns.ubuntu1410i386) [] [];
-    deb_ubuntu1410x86_64 = makeDeb_x86_64 (diskImageFuns: diskImageFuns.ubuntu1410x86_64) [] [];
-    deb_ubuntu1504i386 = makeDeb_i686 (diskImageFuns: diskImageFuns.ubuntu1504i386) [ "libsodium-dev" ] [ "libsodium13" ];
-    deb_ubuntu1504x86_64 = makeDeb_x86_64 (diskImageFuns: diskImageFuns.ubuntu1504x86_64) [ "libsodium-dev" ] [ "libsodium13" ];
-    deb_ubuntu1510i386 = makeDeb_i686 (diskImageFuns: diskImageFuns.ubuntu1510i386) [ "libsodium-dev" ] [ "libsodium13"];
-    deb_ubuntu1510x86_64 = makeDeb_x86_64 (diskImageFuns: diskImageFuns.ubuntu1510x86_64) [ "libsodium-dev" ] [ "libsodium13" ];
-    deb_ubuntu1604i386 = makeDeb_i686 (diskImageFuns: diskImageFuns.ubuntu1604i386) [ "libsodium-dev" ] [ "libsodium18" ];
-    deb_ubuntu1604x86_64 = makeDeb_x86_64 (diskImageFuns: diskImageFuns.ubuntu1604x86_64) [ "libsodium-dev" ] [ "libsodium18" ];
-
-
       nix-copy-closure = (import ./tests/nix-copy-closure.nix rec {
         nix = build.x86_64-linux; system = "x86_64-linux";
       });
@@ -253,33 +227,16 @@ let
       meta.description = "Release-critical builds";
       constituents = 
         [ tarball
-          #build.i686-freebsd
-          #build.i686-linux
           build.x86_64-darwin
-          #build.x86_64-freebsd
           build.x86_64-linux
-          #binaryTarball.i686-freebsd
-          #binaryTarball.i686-linux
           binaryTarball.x86_64-darwin
-          #binaryTarball.x86_64-freebsd
           binaryTarball.x86_64-linux
-          #deb_debian8i386
-          #deb_debian8x86_64
-          #deb_ubuntu1404i386 # LTS
-          #deb_ubuntu1404x86_64 # LTS
-          #deb_ubuntu1504i386
-          #deb_ubuntu1504x86_64
-          #rpm_fedora20i386
-          #rpm_fedora20x86_64
-          #rpm_fedora21i386
-          #rpm_fedora21x86_64
-        ] ;
+        ];
     };
 
   };
 
 
-  makeRPM_i686 = makeRPM "i686-linux";
   makeRPM_x86_64 = makeRPM "x86_64-linux";
 
   makeRPM =
@@ -300,7 +257,6 @@ let
     };
 
 
-  makeDeb_i686 = makeDeb "i686-linux";
   makeDeb_x86_64 = makeDeb "x86_64-linux";
 
   makeDeb =
