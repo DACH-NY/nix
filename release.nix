@@ -1,6 +1,7 @@
 { nix ? { outPath = ./.; revCount = 1234; shortRev = "abcdef"; }
 , nixpkgs ? { outPath = <nixpkgs>; revCount = 1234; shortRev = "abcdef"; }
 , officialRelease ? false
+, doTests ? false
 }:
 
 let
@@ -203,87 +204,76 @@ let
     deb_ubuntu1604x86_64 = makeDeb_x86_64 (diskImageFuns: diskImageFuns.ubuntu1604x86_64) [ "libsodium-dev" ] [ "libsodium18" ];
 
 
-    # System tests.
-    tests.remoteBuilds = (import ./tests/remote-builds.nix rec {
-      nix = build.x86_64-linux; system = "x86_64-linux";
-    });
+      nix-copy-closure = (import ./tests/nix-copy-closure.nix rec {
+        nix = build.x86_64-linux; system = "x86_64-linux";
+      });
 
-    tests.nix-copy-closure = (import ./tests/nix-copy-closure.nix rec {
-      nix = build.x86_64-linux; system = "x86_64-linux";
-    });
-
-    tests.binaryTarball =
-      with import <nixpkgs> { system = "x86_64-linux"; };
-      vmTools.runInLinuxImage (runCommand "nix-binary-tarball-test"
-        { diskImage = vmTools.diskImages.ubuntu1204x86_64;
-        }
-        ''
-          useradd -m alice
-          su - alice -c 'tar xf ${binaryTarball.x86_64-linux}/*.tar.*'
-          mkdir /dest-nix
-          mount -o bind /dest-nix /nix # Provide a writable /nix.
-          chown alice /nix
-          su - alice -c '_NIX_INSTALLER_TEST=1 ./nix-*/install'
-          su - alice -c 'nix-store --verify'
-          su - alice -c 'PAGER= nix-store -qR ${build.x86_64-linux}'
-          mkdir -p $out/nix-support
-          touch $out/nix-support/hydra-build-products
-          umount /nix
-        ''); # */
-
-    tests.evalNixpkgs =
-      import <nixpkgs/pkgs/top-level/make-tarball.nix> {
-        inherit nixpkgs;
-        inherit pkgs;
-        nix = build.x86_64-linux;
-        officialRelease = false;
-      };
-
-    tests.evalNixOS =
-      pkgs.runCommand "eval-nixos" { buildInputs = [ build.x86_64-linux ]; }
-        ''
-          export NIX_DB_DIR=$TMPDIR
-          export NIX_STATE_DIR=$TMPDIR
-          nix-store --init
-
-          nix-instantiate ${nixpkgs}/nixos/release-combined.nix -A tested --dry-run
-
-          touch $out
-        '';
-
+      binaryTarball =
+        with import <nixpkgs> { system = "x86_64-linux"; };
+        vmTools.runInLinuxImage (runCommand "nix-binary-tarball-test"
+          { diskImage = vmTools.diskImages.ubuntu1204x86_64;
+          }
+          ''
+            useradd -m alice
+            su - alice -c 'tar xf ${binaryTarball.x86_64-linux}/*.tar.*'
+            mount -t tmpfs none /nix # Provide a writable /nix.
+            chown alice /nix
+            su - alice -c '_NIX_INSTALLER_TEST=1 ./nix-*/install'
+            su - alice -c 'nix-store --verify'
+            su - alice -c 'nix-store -qR ${build.x86_64-linux}'
+            mkdir -p $out/nix-support
+            touch $out/nix-support/hydra-build-products
+          ''); # */
+  
+      evalNixpkgs =
+        import <nixpkgs/pkgs/top-level/make-tarball.nix> {
+          inherit nixpkgs;
+          inherit pkgs;
+          nix = build.x86_64-linux;
+          officialRelease = false;
+        };
+  
+      evalNixOS =
+        pkgs.runCommand "eval-nixos" { buildInputs = [ build.x86_64-linux ]; }
+          ''
+            export NIX_DB_DIR=$TMPDIR
+            export NIX_STATE_DIR=$TMPDIR
+            nix-store --init
+  
+            nix-instantiate ${nixpkgs}/nixos/release-combined.nix -A tested --dry-run
+  
+            touch $out
+          '';
+    };
+  
 
     # Aggregate job containing the release-critical jobs.
     release = pkgs.releaseTools.aggregate {
       name = "nix-${tarball.version}";
       meta.description = "Release-critical builds";
-      constituents =
+      constituents = 
         [ tarball
           #build.i686-freebsd
-          build.i686-linux
+          #build.i686-linux
           build.x86_64-darwin
           #build.x86_64-freebsd
           build.x86_64-linux
           #binaryTarball.i686-freebsd
-          binaryTarball.i686-linux
+          #binaryTarball.i686-linux
           binaryTarball.x86_64-darwin
           #binaryTarball.x86_64-freebsd
           binaryTarball.x86_64-linux
-          deb_debian8i386
-          deb_debian8x86_64
-          deb_ubuntu1404i386 # LTS
-          deb_ubuntu1404x86_64 # LTS
-          deb_ubuntu1504i386
-          deb_ubuntu1504x86_64
-          rpm_fedora20i386
-          rpm_fedora20x86_64
-          rpm_fedora21i386
-          rpm_fedora21x86_64
-          tests.remoteBuilds
-          tests.nix-copy-closure
-          tests.binaryTarball
-          tests.evalNixpkgs
-          tests.evalNixOS
-        ];
+          #deb_debian8i386
+          #deb_debian8x86_64
+          #deb_ubuntu1404i386 # LTS
+          #deb_ubuntu1404x86_64 # LTS
+          #deb_ubuntu1504i386
+          #deb_ubuntu1504x86_64
+          #rpm_fedora20i386
+          #rpm_fedora20x86_64
+          #rpm_fedora21i386
+          #rpm_fedora21x86_64
+        ] ;
     };
 
   };
