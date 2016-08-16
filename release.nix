@@ -178,23 +178,6 @@ let
       };
 
 
-    rpm_fedora18x86_64 = makeRPM_x86_64 (diskImageFunsFun: diskImageFunsFun.fedora18x86_64) [];
-    rpm_fedora19x86_64 = makeRPM_x86_64 (diskImageFunsFun: diskImageFunsFun.fedora19x86_64) [];
-    rpm_fedora20x86_64 = makeRPM_x86_64 (diskImageFunsFun: diskImageFunsFun.fedora20x86_64) [];
-    rpm_fedora21x86_64 = makeRPM_x86_64 (diskImageFunsFun: diskImageFunsFun.fedora21x86_64) [ "libsodium-devel" ];
-
-
-    deb_debian7x86_64 = makeDeb_x86_64 (diskImageFunsFun: diskImageFunsFun.debian7x86_64) [];
-    deb_debian8x86_64 = makeDeb_x86_64 (diskImageFunsFun: diskImageFunsFun.debian8x86_64) [ "libsodium-dev" ];
-
-    deb_ubuntu1210x86_64 = makeDeb_x86_64 (diskImageFuns: diskImageFuns.ubuntu1210x86_64) [];
-    deb_ubuntu1304x86_64 = makeDeb_x86_64 (diskImageFuns: diskImageFuns.ubuntu1304x86_64) [];
-    deb_ubuntu1310x86_64 = makeDeb_x86_64 (diskImageFuns: diskImageFuns.ubuntu1310x86_64) [];
-    deb_ubuntu1404x86_64 = makeDeb_x86_64 (diskImageFuns: diskImageFuns.ubuntu1404x86_64) [];
-    deb_ubuntu1410x86_64 = makeDeb_x86_64 (diskImageFuns: diskImageFuns.ubuntu1410x86_64) [];
-    deb_ubuntu1504x86_64 = makeDeb_x86_64 (diskImageFuns: diskImageFuns.ubuntu1504x86_64) [ "libsodium-dev" ];
-
-
     # System tests.
     tests = if !doTests then {} else {
       remoteBuilds = (import ./tests/remote-builds.nix rec {
@@ -256,11 +239,6 @@ let
           binaryTarball.x86_64-darwin
           #binaryTarball.x86_64-freebsd
           binaryTarball.x86_64-linux
-          deb_debian7x86_64
-          deb_ubuntu1404x86_64 # LTS
-          deb_ubuntu1504x86_64
-          rpm_fedora20x86_64
-          rpm_fedora21x86_64
         ] (if doTests then [
           tests.remoteBuilds
           tests.nix-copy-closure
@@ -271,51 +249,6 @@ let
     };
 
   };
-
-
-  makeRPM_x86_64 = makeRPM "x86_64-linux";
-
-  makeRPM =
-    system: diskImageFun: extraPackages:
-
-    with import <nixpkgs> { inherit system; };
-
-    releaseTools.rpmBuild rec {
-      name = "nix-rpm";
-      src = jobs.tarball;
-      diskImage = (diskImageFun vmTools.diskImageFuns)
-        { extraPackages =
-            [ "perl-DBD-SQLite" "perl-devel" "sqlite" "sqlite-devel" "bzip2-devel" "emacs" "perl-WWW-Curl" "libcurl-devel" "openssl-devel" "xz-devel" ]
-            ++ extraPackages; };
-      memSize = 1024;
-      meta.schedulingPriority = 50;
-      postRPMInstall = "cd /tmp/rpmout/BUILD/nix-* && make installcheck";
-    };
-
-
-  makeDeb_x86_64 = makeDeb "x86_64-linux";
-
-  makeDeb =
-    system: diskImageFun: extraPackages:
-
-    with import <nixpkgs> { inherit system; };
-
-    releaseTools.debBuild {
-      name = "nix-deb";
-      src = jobs.tarball;
-      diskImage = (diskImageFun vmTools.diskImageFuns)
-        { extraPackages =
-            [ "libdbd-sqlite3-perl" "libsqlite3-dev" "libbz2-dev" "libwww-curl-perl" "libcurl-dev" "libcurl3-nss" "libssl-dev" "liblzma-dev" ]
-            ++ extraPackages; };
-      memSize = 1024;
-      meta.schedulingPriority = 50;
-      configureFlags = "--sysconfdir=/etc";
-      debRequires =
-        [ "curl" "libdbd-sqlite3-perl" "libsqlite3-0" "libbz2-1.0" "bzip2" "xz-utils" "libwww-curl-perl" "libssl1.0.0" "liblzma5" ]
-        ++ lib.optionals (lib.elem "libsodium-dev" extraPackages) [ "libsodium13" ] ;
-      debMaintainer = "Eelco Dolstra <eelco.dolstra@logicblox.com>";
-      doInstallCheck = true;
-    };
 
 
 in jobs
