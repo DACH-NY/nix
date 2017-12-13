@@ -23,16 +23,17 @@ if [ -z "$HOME" ]; then
 fi
 
 # macOS support for 10.10 or higher
-if [[ "$(uname -s)" = "Darwin" ]]; then
-    if [[ $(($(sw_vers -productVersion | cut -d '.' -f 2))) -lt 10 ]]; then
-        echo "$0: macOS $(sw_vers -productVersion) is not supported, upgrade to 10.10 or higher"
-        exit 1
-    fi
-
-    printf '\e[1;31mSwitching to the Multi-User Darwin Installer\e[0m\n'
-    exec "$self/install-darwin-multi-user"
-    exit 0
-fi
+# DA: Comment this out as the multi-user mode has issues on High Sierra.
+#if [[ "$(uname -s)" = "Darwin" ]]; then
+#    if [[ $(($(sw_vers -productVersion | cut -d '.' -f 2))) -lt 10 ]]; then
+#        echo "$0: macOS $(sw_vers -productVersion) is not supported, upgrade to 10.10 or higher"
+#        exit 1
+#    fi
+#
+#    printf '\e[1;31mSwitching to the Multi-User Darwin Installer\e[0m\n'
+#    exec "$self/install-darwin-multi-user"
+#    exit 0
+#fi
 
 if [ "$(id -u)" -eq 0 ]; then
     printf '\e[1;31mwarning: installing Nix as root is not supported by this script!\e[0m\n'
