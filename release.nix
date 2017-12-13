@@ -217,56 +217,56 @@ let
 
 
     # System tests.
-    tests.remoteBuilds = (import ./tests/remote-builds.nix rec {
-      nix = build.x86_64-linux; system = "x86_64-linux";
-    });
+    #tests.remoteBuilds = (import ./tests/remote-builds.nix rec {
+    #  nix = build.x86_64-linux; system = "x86_64-linux";
+    #});
 
-    tests.nix-copy-closure = (import ./tests/nix-copy-closure.nix rec {
-      nix = build.x86_64-linux; system = "x86_64-linux";
-    });
+    #tests.nix-copy-closure = (import ./tests/nix-copy-closure.nix rec {
+    #  nix = build.x86_64-linux; system = "x86_64-linux";
+    #});
 
-    tests.setuid = pkgs.lib.genAttrs (pkgs.lib.filter (pkgs.lib.hasSuffix "-linux") systems) (system:
-      import ./tests/setuid.nix rec {
-        nix = build.${system}; inherit system;
-      });
+    #tests.setuid = pkgs.lib.genAttrs (pkgs.lib.filter (pkgs.lib.hasSuffix "-linux") systems) (system:
+    #  import ./tests/setuid.nix rec {
+    #    nix = build.${system}; inherit system;
+    #  });
 
-    tests.binaryTarball =
-      with import <nixpkgs> { system = "x86_64-linux"; };
-      vmTools.runInLinuxImage (runCommand "nix-binary-tarball-test"
-        { diskImage = vmTools.diskImages.ubuntu1204x86_64;
-        }
-        ''
-          useradd -m alice
-          su - alice -c 'tar xf ${binaryTarball.x86_64-linux}/*.tar.*'
-          mkdir /dest-nix
-          mount -o bind /dest-nix /nix # Provide a writable /nix.
-          chown alice /nix
-          su - alice -c '_NIX_INSTALLER_TEST=1 ./nix-*/install'
-          su - alice -c 'nix-store --verify'
-          su - alice -c 'PAGER= nix-store -qR ${build.x86_64-linux}'
-          mkdir -p $out/nix-support
-          touch $out/nix-support/hydra-build-products
-          umount /nix
-        ''); # */
+    #tests.binaryTarball =
+    #  with import <nixpkgs> { system = "x86_64-linux"; };
+    #  vmTools.runInLinuxImage (runCommand "nix-binary-tarball-test"
+    #    { diskImage = vmTools.diskImages.ubuntu1204x86_64;
+    #    }
+    #    ''
+    #      useradd -m alice
+    #      su - alice -c 'tar xf ${binaryTarball.x86_64-linux}/*.tar.*'
+    #      mkdir /dest-nix
+    #      mount -o bind /dest-nix /nix # Provide a writable /nix.
+    #      chown alice /nix
+    #      su - alice -c '_NIX_INSTALLER_TEST=1 ./nix-*/install'
+    #      su - alice -c 'nix-store --verify'
+    #      su - alice -c 'PAGER= nix-store -qR ${build.x86_64-linux}'
+    #      mkdir -p $out/nix-support
+    #      touch $out/nix-support/hydra-build-products
+    #      umount /nix
+    #    ''); # */
 
-    tests.evalNixpkgs =
-      import <nixpkgs/pkgs/top-level/make-tarball.nix> {
-        inherit nixpkgs;
-        inherit pkgs;
-        nix = build.x86_64-linux;
-        officialRelease = false;
-      };
+    #tests.evalNixpkgs =
+    #  import <nixpkgs/pkgs/top-level/make-tarball.nix> {
+    #    inherit nixpkgs;
+    #    inherit pkgs;
+    #    nix = build.x86_64-linux;
+    #    officialRelease = false;
+    #  };
 
-    tests.evalNixOS =
-      pkgs.runCommand "eval-nixos" { buildInputs = [ build.x86_64-linux ]; }
-        ''
-          export NIX_STATE_DIR=$TMPDIR
-          nix-store --init
+    #tests.evalNixOS =
+    #  pkgs.runCommand "eval-nixos" { buildInputs = [ build.x86_64-linux ]; }
+    #    ''
+    #      export NIX_STATE_DIR=$TMPDIR
+    #      nix-store --init
 
-          nix-instantiate ${nixpkgs}/nixos/release-combined.nix -A tested --dry-run
+    #      nix-instantiate ${nixpkgs}/nixos/release-combined.nix -A tested --dry-run
 
-          touch $out
-        '';
+    #      touch $out
+    #    '';
 
 
     # Aggregate job containing the release-critical jobs.
