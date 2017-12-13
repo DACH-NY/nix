@@ -273,30 +273,30 @@ let
       constituents =
         [ tarball
           #build.i686-freebsd
-          build.i686-linux
+          #build.i686-linux
           build.x86_64-darwin
           #build.x86_64-freebsd
           build.x86_64-linux
           #binaryTarball.i686-freebsd
-          binaryTarball.i686-linux
+          #binaryTarball.i686-linux
           binaryTarball.x86_64-darwin
           #binaryTarball.x86_64-freebsd
           binaryTarball.x86_64-linux
-          deb_debian8i386
-          deb_debian8x86_64
-          deb_ubuntu1404i386 # LTS
-          deb_ubuntu1404x86_64 # LTS
-          deb_ubuntu1504i386
-          deb_ubuntu1504x86_64
-          rpm_fedora20i386
-          rpm_fedora20x86_64
-          rpm_fedora21i386
-          rpm_fedora21x86_64
-          tests.remoteBuilds
-          tests.nix-copy-closure
-          tests.binaryTarball
-          tests.evalNixpkgs
-          tests.evalNixOS
+          #deb_debian8i386
+          #deb_debian8x86_64
+          #deb_ubuntu1404i386 # LTS
+          #deb_ubuntu1404x86_64 # LTS
+          #deb_ubuntu1504i386
+          #deb_ubuntu1504x86_64
+          #rpm_fedora20i386
+          #rpm_fedora20x86_64
+          #rpm_fedora21i386
+          #rpm_fedora21x86_64
+          #tests.remoteBuilds
+          #tests.nix-copy-closure
+          #tests.binaryTarball
+          #tests.evalNixpkgs
+          #tests.evalNixOS
         ];
     };
 
@@ -351,4 +351,6 @@ let
     };
 
 
-in jobs
+in {
+  inherit (jobs) release build binaryTarball;
+}
